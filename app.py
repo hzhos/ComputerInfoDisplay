@@ -147,10 +147,13 @@ def fetch_disk_info(wmi_client):
     return [f"{d.Caption} :: {d.SerialNumber}" for d in wmi_client.Win32_DiskDrive()]
 
 
-def fetch_os():
+def fetch_os_ie():
     """fetch info from operating system.
     info msg like: 'system info(arch)'"""
-    return [f"{platform.platform()} ({platform.machine()})"]
+    """fetch windows ie's version from registry"""
+    k = reg.OpenKey(reg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Internet Explorer", 0, reg.KEY_READ)
+    v = reg.QueryValueEx(k, "Version")
+    return [f"{platform.platform()} ({platform.machine()}) & IE{v[0]}"]
 
 
 def fetch_network_info(wmi_client):
@@ -159,22 +162,13 @@ def fetch_network_info(wmi_client):
     return [f"网卡:{n.Description}\n IP地址:{n.IPAddress[0]}\n MAC地址:{n.MACAddress}\n"
             for n in wmi_client.Win32_NetworkAdapterConfiguration(IPEnabled=True)]
 
-
-def fetch_ie_version() -> str:
-    """fetch windows ie's version from registry"""
-    k = reg.OpenKey(reg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Internet Explorer", 0, reg.KEY_READ)
-    v = reg.QueryValueEx(k, "Version")
-    return [v[0]]
-
-
 w = wmi.WMI()
 
 starter = AutoStarter(w)
 
 main = MainPanel(starter)
-main.add_info_list("操作系统类型", fetch_os())
+main.add_info_list("操作系统&IE", fetch_os_ie())
 main.add_info_list("磁盘序列号", fetch_disk_info(w))
 main.add_info_list("网卡适配器", fetch_network_info(w))
-main.add_info_list("IE版本", fetch_ie_version())
 
 main.start()
